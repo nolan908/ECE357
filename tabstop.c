@@ -1,6 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
 #include "mylib.h"
-
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -17,12 +16,11 @@ static void usage(const char *prog) {
       "  %s [-b bufsiz]\n", prog, prog, prog, prog);
 }
 
-//parse positive integer, returns -1 on error
 static int parse_pos_int(const char *s) {
     if (!s || !*s) return -1;
     char *end = NULL;
     long v = strtol(s, &end, 10);
-    if (*end != '\0' || v <= 0 || v > 1<<26) return -1; // cap buffer size
+    if (*end != '\0' || v <= 0 || v > 1<<26) return -1;
     return (int)v;
 }
 
@@ -30,9 +28,9 @@ int main(int argc, char **argv)
 {
     const char *infile  = NULL;
     const char *outfile = NULL;
-    int bufsiz = 0; // 0 is the default BUFSIZ in the library
+    int bufsiz = 0; 
     
-    //very small, explicit option parser for -b and -o
+    
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "-b") == 0) {
             if (i+1 >= argc) { usage(argv[0]); return 255; }
@@ -49,7 +47,7 @@ int main(int argc, char **argv)
         }
     }
     
-    //Open input
+    
     MYSTREAM *in = NULL, *out = NULL;
     
     if (infile) {
@@ -62,7 +60,7 @@ int main(int argc, char **argv)
         if (!in) { perror("fdopen stdin"); return 255; }
     }
     
-    //Open output
+    
     if (outfile) {
         out = (bufsiz > 0) ? myfopen_ex(outfile, "w", bufsiz)
         : myfopen(outfile, "w");
@@ -77,7 +75,7 @@ int main(int argc, char **argv)
         if (!out) { perror("fdopen stdout"); myfclose(in); return 255; }
     }
     
-    //core loop: replace '\t' with four spaces
+    
     for (;;) {
         int ch = myfgetc(in);
         if (ch == -1) {
@@ -108,5 +106,5 @@ int main(int argc, char **argv)
     if (myfclose(in)  < 0) { perror("close input"); }
     if (myfclose(out) < 0) { perror("close output"); return 255; }
     
-    return 0; //success status
+    return 0;
 }
