@@ -1,4 +1,4 @@
-#define _POSIX_C_SOURCE 200809L
+#define _POSIX_C_SOURCE 200809L //featured in man pages for MacOS using this standard for system calls
 #include "mylib.h"
 #include <stdio.h>
 #include <string.h>
@@ -7,7 +7,7 @@
 #include <ctype.h>
 #include <unistd.h>
 
-static void usage(const char *prog) {
+static void usage(const char *prog) { //error message
     fprintf(stderr,
       "Usage:\n"
       "  %s [-b bufsiz] -o OUTFILE INFILE\n"
@@ -20,7 +20,7 @@ static int parse_pos_int(const char *s) {
     if (!s || !*s) return -1;
     char *end = NULL;
     long v = strtol(s, &end, 10);
-    if (*end != '\0' || v <= 0 || v > 1<<26) return -1;
+    if (*end != '\0' || v <= 0 || v > 1<<26) return -1; //cap buffer size to some large number
     return (int)v;
 }
 
@@ -31,7 +31,7 @@ int main(int argc, char **argv)
     int bufsiz = 0; 
     
     
-    for (int i = 1; i < argc; ++i) {
+    for (int i = 1; i < argc; ++i) { //error handling returning 255 if something went wrong
         if (strcmp(argv[i], "-b") == 0) {
             if (i+1 >= argc) { usage(argv[0]); return 255; }
             bufsiz = parse_pos_int(argv[++i]);
@@ -106,5 +106,5 @@ int main(int argc, char **argv)
     if (myfclose(in)  < 0) { perror("close input"); }
     if (myfclose(out) < 0) { perror("close output"); return 255; }
     
-    return 0;
+    return 0; //success
 }
