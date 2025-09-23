@@ -1,0 +1,57 @@
+1A
+i) The system will run fsck on the ext2 (non-journaling) volume before mounting it. fsck scans and repairs on-disk inconsistencies caused by the crash interrupting multi-block updates. Typical issues it fixes include:
+
+-Orphaned inodes (allocated but unreachable) — moved into lost+found.
+
+-Wrong link counts (directory entries vs. inode nlink disagree).
+
+-Free-map mismatches (blocks marked free but referenced, or marked used but unreferenced).
+
+-Half-applied directory updates (e.g., directory entry created but inode bitmap not updated).
+
+Example: A file was being created when power failed: inode allocated and typed, but the directory entry never written. After reboot, fsck finds an allocated inode with no path and relinks it into lost+found.
+
+ii) Mounting with write-through (-o sync) does not eliminate these problems. The core issue is that creating/renaming/removing files is not atomic across multiple disk blocks; a crash between steps still leaves inconsistent state. Write-through merely reduces cache latency, not the need for multi-block transactional integrity (which journaling provides)
+
+
+1B
+
+Why the “8 TB” didn’t hold ~8,000 one-GiB files:
+
+Decimal vs. binary units. “8 TB” = 8,000,000,000,000 bytes ≈ 7.28 TiB. Each video is 2³⁰ = 1 GiB (= 1,073,741,824 bytes). Max count from capacity alone is about
+8,000,000,000,000 / 1,073,741,824 ≈ 7,451 files, not ~8,000.
+
+Filesystem overhead & reservations. EXT4 reserves ~5% for root by default, plus space for superblocks/group descriptors/inode tables and the journal. As a non-root user, that reserved space is unavailable, reducing effective capacity further.
+
+(Those two alone can cut hundreds of GiB; internal fragmentation isn’t a factor here because each file is an exact multiple of 4 KiB.)
+
+
+1C
+
+The first move (mv /A/B/F1 /A/C/F2) was likely a same-filesystem rename(2) — atomic and fast. The second (mv /A/C/F2 /A/Z/F3) likely crossed a mount point at /A/Z, forcing mv to copy-then-unlink (read the whole big file and write it out on the other filesystem), which is slow.
+
+1D
+
+Timeline (local time, America/New_York):
+
+4:00 PM Sep 24, 2025: touch newfile.txt creates empty file.
+
+4:15 PM: echo "123" > newfile.txt writes "123\n", i.e., 4 bytes; updates mtime (per the notes, ordinary writes do not change ctime).
+
+4:30 PM: touch -m -t 09182230.10 newfile.txt sets mtime to Thu Sep 18, 2025 22:30:10; updates ctime now (because metadata changed via utime).
+
+4:55 PM: cat newfile.txt updates atime (read).
+
+Final stat fields:
+
+st_size = 4 (bytes)
+
+st_nlink = 1
+
+st_mode = regular file -rw-r--r-- (octal 0644; type+mode commonly shown as 100644)
+
+st_atime = Wed Sep 24, 2025 16:55:00 (approx; the moment you ran cat)
+
+st_mtime = Thu Sep 18, 2025 22:30:10 (from the touch -m -t command)
+
+st_ctime = Wed Sep 24, 2025 16:30:00 (the moment you ran the touch that changed mtime)
