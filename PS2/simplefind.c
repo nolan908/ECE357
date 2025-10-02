@@ -17,7 +17,7 @@
 #include <sys/sysmacros.h>
 #include <unistd.h>
 #include <inttypes.h>
-
+// recieved help from the internet
 /* 
  *  -l : print verbose info for each node (like "find -ls")
  *  -x : do not cross onto other filesystems (stay on same st_dev)
