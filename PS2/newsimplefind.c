@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Derive the leaf name for the starting node w/o using invalid_component().
-    // special-case "/" so it prints and participates in -n matching as "/".
+    // special-case "/" so it prints and participates in -n matching as "/"
     const char *leaf;
     if (strcmp(startbuf, "/") == 0) {
         leaf = "/";
