@@ -63,7 +63,7 @@ static void time_to_ls(const struct timespec *ts, char *buf, size_t bufsz) {
     localtime_r(&t, &tmv); //localtime_r doesn't overwrite (Linux manpages)
     localtime_r(&now, &nowtm);
 
-    const double SIX_MONTHS = 15552000.0; // ~180 days
+    const double SIX_MONTHS = 15552000.0; // 180 days
     if (difftime(now, t) >= -SIX_MONTHS && difftime(now, t) <= SIX_MONTHS) {
         strftime(buf, bufsz, "%b %e %H:%M", &tmv);
     } else {
