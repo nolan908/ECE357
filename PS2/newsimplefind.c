@@ -14,34 +14,33 @@
 #include <grp.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/sysmacros.h>
+#include <sys/sysmacros.h> 
 #include <unistd.h>
 #include <inttypes.h>
 
-// Command-line flags
-static int flag_long = 0;            // -l
-static int flag_xdev = 0;            // -x
-static const char *name_pat = NULL;  // -n pattern
+static int flag_long = 0; // -l: print a verbose, find -ls
+static int flag_xdev = 0; // -x: recursion only in directories whose st_dev match
+static const char *pattern = NULL;  // -n pattern: filter on basename
 
 static dev_t start_dev = (dev_t)-1;  // starting device (for -x)
 
-// Join two path components safely into dst.
+// join two paths components
 static int join_path(char dst[PATH_MAX], const char *a, const char *b) {
-    int n = snprintf(dst, PATH_MAX, "%s/%s", a, b);
+    int n = snprintf(dst, PATH_MAX, "%s/%s", a, b); //handle edge cases better
     return (n < 0 || (size_t)n >= PATH_MAX) ? -1 : 0;
 }
 
-// Check for empty string or illegal "/" in a *directory entry* name.
-// (Not used for the starting path leaf; see main().)
+// check for illegal characters in path name
+// (not used for the starting path leaf; see main())
 static int invalid_component(const char *name) {
-    if (!name || !*name) return 1;
+    if (!name || !*name) return 1; //empty string
     for (const unsigned char *p = (const unsigned char*)name; *p; ++p) {
-        if (*p == '/') return 1;
+        if (*p == '/') return 1; //also null terminator cannot be stored in filesystem
     }
     return 0;
 }
 
-// Convert mode bits into something like "drwxr-xr-x"
+// convert mode bits into -l verbose
 static void mode_to_string(mode_t m, char out[11]) {
     out[0] = S_ISDIR(m) ? 'd' : S_ISLNK(m) ? 'l' : S_ISCHR(m) ? 'c' :
              S_ISBLK(m) ? 'b' : S_ISFIFO(m) ? 'p' : S_ISSOCK(m) ? 's' : '-';
@@ -56,12 +55,12 @@ static void mode_to_string(mode_t m, char out[11]) {
     out[10] = '\0';
 }
 
-// Format modification time like ls does (recent files show HH:MM, old ones show year)
+// format m_time to verbose ls -l
 static void time_to_ls(const struct timespec *ts, char *buf, size_t bufsz) {
     time_t now = time(NULL);
     time_t t = ts->tv_sec;
     struct tm tmv, nowtm;
-    localtime_r(&t, &tmv);
+    localtime_r(&t, &tmv); //localtime_r doesn't overwrite (Linux manpages)
     localtime_r(&now, &nowtm);
 
     const double SIX_MONTHS = 15552000.0; // ~180 days
@@ -72,16 +71,16 @@ static void time_to_ls(const struct timespec *ts, char *buf, size_t bufsz) {
     }
 }
 
-// Print a line of output in -l (verbose) mode
+// print a line of output verbose
 static void print_ls_line(const char *path, const char *name, const struct stat *sb, int is_symlink) {
-    printf("%ju ", (uintmax_t)sb->st_ino);            // inode
-    printf("%jd ", (intmax_t)(sb->st_blocks / 2));   // blocks in 1K units (Linux: st_blocks is 512B)
+    printf("%ju ", (uintmax_t)sb->st_ino); // inode
+    printf("%jd ", (intmax_t)(sb->st_blocks / 2)); // blocks in 1K units (linux: st_blocks is 512B)
 
     char mstr[11];
     mode_to_string(sb->st_mode, mstr);
     printf("%s ", mstr);
 
-    printf("%ju ", (uintmax_t)sb->st_nlink);          // link count
+    printf("%ju ", (uintmax_t)sb->st_nlink); // link count
 
     struct passwd *pw = getpwuid(sb->st_uid);
     struct group  *gr = getgrgid(sb->st_gid);
@@ -117,7 +116,7 @@ static void print_ls_line(const char *path, const char *name, const struct stat 
 
 // Decide whether to print this node, depending on -n filter and -l flag
 static void visit_node(const char *dirpath, const char *name, const char *fullpath, const struct stat *sb) {
-    if (name_pat && fnmatch(name_pat, name, 0) != 0) {
+    if (pattern && fnmatch(pattern, name, 0) != 0) {
         return; // skip if it doesn’t match
     }
 
@@ -129,7 +128,7 @@ static void visit_node(const char *dirpath, const char *name, const char *fullpa
     }
 }
 
-// Walk through a directory recursively
+// walk through a directory recursively
 static void explore_directory(const char *dirpath) {
     DIR *dp = opendir(dirpath);
     if (!dp) {
@@ -179,7 +178,7 @@ int main(int argc, char *argv[]) {
         switch (opt) {
             case 'l': flag_long = 1; break;
             case 'x': flag_xdev = 1; break;
-            case 'n': name_pat = optarg; break;
+            case 'n': pattern = optarg; break;
             default:
                 fprintf(stderr, "Usage: %s [-l] [-x] [-n pattern] [starting_path]\n", argv[0]);
                 return EXIT_FAILURE;
@@ -198,15 +197,15 @@ int main(int argc, char *argv[]) {
     }
     if (flag_xdev) start_dev = sb.st_dev;
 
-    // Copy start path (for consistent buffer handling)
+    // copy start path (for buffer handling)
     char startbuf[PATH_MAX];
     if (snprintf(startbuf, sizeof startbuf, "%s", startpath) >= (int)sizeof startbuf) {
         fprintf(stderr, "Error: starting path too long\n");
         return EXIT_FAILURE;
     }
 
-    // Derive the leaf name for the starting node *without* using invalid_component().
-    // Special-case "/" so it prints and participates in -n matching as "/".
+    // Derive the leaf name for the starting node w/o using invalid_component().
+    // special-case "/" so it prints and participates in -n matching as "/".
     const char *leaf;
     if (strcmp(startbuf, "/") == 0) {
         leaf = "/";
