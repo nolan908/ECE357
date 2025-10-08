@@ -17,7 +17,7 @@ argv[4] = "broken.c"
 
 Each thread has its own stack for local variables/function calls. This allows threads to execute different functions at the same time without overwriting each other's local data.
 
-Each thread has is its own virtual processor, so each has its own CPU register set (Program Counter, etc.)
+Each thread has its own "virtual processor," so each has its own CPU register set (Program Counter, etc.)
 
 1C)
 
@@ -25,7 +25,11 @@ char buf[16] is declared at the global scope; buf is stored in the bss which has
 Global variables in .bss are zero-initialized by the program loader. buf[0] == '\0'
 which represents an empty string when passed to %s.
 
-The final output is just 'XY' as the printf() function in main prints X, then nothing for %s, then Y\n.
+The final output is just 
+
+XY
+
+as the printf() function in main prints X, then nothing for %s, then Y\n.
 
 
 1D)
@@ -37,5 +41,5 @@ fprintf(stdout, "Message 2"); has no new line, so it stays in the user-space std
 
 Therefore, the output would be just 
 
-Message1
+Message 1
 
