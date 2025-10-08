@@ -1,0 +1,41 @@
+Problem 1
+
+1A) 
+
+script.sh has mode octal 777 -> -rwxrwxrwx
+
+The kernel would see #!/bin/bash -vx, so that the binary that runs in PID 1000 is /bin/bash.
+The shell filters to matching filenames that end in "n.c"
+argv[0] = "/bin/bash"
+argv[1] = "-vx"
+argv[2] = "./script.sh"
+argv[3] = "main.c"
+argv[4] = "broken.c"
+// hopeless.c isn't there because it ends in "s.c", not "n.c"
+
+1B)
+
+Each thread has its own stack for local variables/function calls. This allows threads to execute different functions at the same time without overwriting each other's local data.
+
+Each thread has is its own virtual processor, so each has its own CPU register set (Program Counter, etc.)
+
+1C)
+
+char buf[16] is declared at the global scope; buf is stored in the bss which has all uninitialized global/static variables.
+Global variables in .bss are zero-initialized by the program loader. buf[0] == '\0'
+which represents an empty string when passed to %s.
+
+The final output is just 'XY' as the printf() function in main prints X, then nothing for %s, then Y\n.
+
+
+1D)
+
+stdout is in line-buffered mode which means the buffer flushes on a newline/when buffer fills.
+fprintf(stdout, "Message1\n"); includes a newline which is flushed immediately and appears on the screen.
+fprintf(stdout, "Message 2"); has no new line, so it stays in the user-space stdio buffer for now (not written to terminal).
+*(int *)0 = 3; dereferences a null pointer. Therefore, the process receives a kill signal SIGSEGV and the stdio buffers can not be flushed, so Message 2 is lost.
+
+Therefore, the output would be just 
+
+Message1
+
