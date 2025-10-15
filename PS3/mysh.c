@@ -18,12 +18,12 @@
 #define MAXARGS 256
 
 typedef struct {
-    char *argv[MAXARGS];   // command + args, NULL-terminated
-    char *infile;          // for "< file"
-    char *outfile;         // for "> file"
-    char *errfile;         // for "2> file"
-    int   append_out;      // 0: truncate, 1: append (we keep it 0 to match minimum spec)
-    int   append_err;      // ditto for stderr (unused unless you extend)
+    char *argv[MAXARGS]; // command + args, NULL-terminated
+    char *infile; // for "< file"
+    char *outfile; // for "> file"
+    char *errfile; // for "2> file"
+    int   append_out; // 0: truncate, 1: append (we keep it 0 to match minimum spec)
+    int   append_err; // ditto for stderr (unused unless you extend)
 } Cmd;
 
 static void die(const char *fmt, ...) {
@@ -152,7 +152,7 @@ static int run_command(Cmd *cmd) {
     if (pid < 0) { perror("fork"); return 1; }
 
     if (pid == 0) {
-        // CHILD: establish redirections (dup2 + close), then exec
+        // Child: establish redirections (dup2 + close), then exec
         // (Lecture shows dup2 then close the original fd — exactly this pattern.)
         // stdout/stderr messages from shell must not pollute child's stdout, so we print nothing here.
 
@@ -204,7 +204,7 @@ static int run_command(Cmd *cmd) {
     double usr_s  = ru.ru_utime.tv_sec + ru.ru_utime.tv_usec/1e6;
     double sys_s  = ru.ru_stime.tv_sec + ru.ru_stime.tv_usec/1e6;
 
-    // Report to stderr (as in the assignment example)
+    // Report to stderr
     if (WIFEXITED(status)) {
         fprintf(stderr, "Child process %d exited normally\n", pid);
         fprintf(stderr, "Exit: %d  Real: %.3fs  User: %.3fs  Sys: %.3fs\n",
