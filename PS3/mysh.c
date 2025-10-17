@@ -45,8 +45,7 @@ static bool is_blank(const char *s) {
     return true;
 }
 
-// Very simple tokenizer: split on whitespace.
-// Recognize tokens: "<", ">", "2>" as separate tokens or combined forms like "<file" ">file" "2>file".
+// Recognize tokens: "<", ">", "2>" as separate tokens or combined forms like "<file" ">file" "2>file"
 static int parse_line(char *line, Cmd *cmd) {
     memset(cmd, 0, sizeof(*cmd));
 
@@ -259,9 +258,8 @@ static int run_loop(FILE *in) {
 }
 
 int main(int argc, char **argv) {
-    // If launched with a single argument: script mode — open file directly (DO NOT redirect stdin),
+    // If launched with a single argument: script mode: open file directly (DO NOT redirect stdin),
     // and ensure no leak into child by using O_CLOEXEC (clean FD env) per problem text.
-    // (We could also fcntl(fd, F_SETFD, FD_CLOEXEC) if O_CLOEXEC isn’t available.)
     if (argc == 2) {
         int fd = open(argv[1], O_RDONLY | O_CLOEXEC);
         if (fd < 0) {
