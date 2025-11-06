@@ -13,9 +13,9 @@ int main(void) {
 
     FILE *tty = NULL;
 #ifdef _WIN32
-    tty = fopen("CONIN$", "r"); // Windows console input device
+    tty = fopen("CONIN$", "r"); // Windows (CONIN from Microsoft Docs)
 #else
-    tty = fopen("/dev/tty", "r"); // POSIX terminal device
+    tty = fopen("/dev/tty", "r"); // for normal POSIX LINUX
 #endif
 
 if (!tty) {
@@ -56,4 +56,5 @@ if (!tty) {
 
     fclose(tty); 
     return 0;
+
 }
