@@ -28,7 +28,6 @@ int main(int argc, char **argv) {
         close(p12[0]); close(p12[1]);
         close(p23[0]); close(p23[1]);
 
-        //Build argv: "./wordgen" [N] NULL
         char *gen_argv[3] = {"./wordgen", NULL, NULL};
         if (argc > 1) gen_argv[1] = argv[1];
         exec_child("./wordgen", gen_argv);
