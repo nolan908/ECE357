@@ -15,7 +15,6 @@ int main(void) {
         if (n == -1) break;
 
         if (fwrite(line, 1, (size_t)n, stdout) < (size_t)n) {
-            // stdout error (should be rare here)
             break;
         }
         shown++;
