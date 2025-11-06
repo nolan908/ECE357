@@ -1,4 +1,4 @@
-#define _POSIX_C_SOURCE 200809L
+// wordsearch.c — Problem 3C
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,86 +8,89 @@
 static volatile sig_atomic_t got_sigpipe = 0;
 static void on_sigpipe(int sig) { (void)sig; got_sigpipe = 1; }
 
-static void upcase_inplace(char *s) {
+static void upcase_inplace(char *s){
     for (; *s; ++s) *s = (char)toupper((unsigned char)*s);
 }
 
-static int is_all_letters(const char *s) {
+static int is_all_AZ(const char *s){
     if (!*s) return 0;
-    for (; *s; ++s) if (!(*s >= 'A' && *s <= 'Z')) return 0;
+    for (; *s; ++s) if (*s < 'A' || *s > 'Z') return 0;
     return 1;
 }
 
-int main(int argc, char **argv) {
-    if (argc < 2) {
+static char *dupstr(const char *s){
+    size_t n = strlen(s) + 1;
+    char *p = (char *)malloc(n);
+    if (p) memcpy(p, s, n);
+    return p;
+}
+
+static void strip_newline(char *s){
+    size_t n = strcspn(s, "\r\n");
+    s[n] = '\0';
+}
+
+int main(int argc, char **argv){
+    if (argc < 2){
         fprintf(stderr, "usage: %s <words.txt>\n", argv[0]);
         return 2;
     }
 
-    //(c) Install SIGPIPE handler so we can report "Matched ..." before exiting
-    struct sigaction sa = {0};
-    sa.sa_handler = on_sigpipe;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0;
-    sigaction(SIGPIPE, &sa, NULL);
+    //3C: ensure we always print "Matched ..." even if pager quits
+    signal(SIGPIPE, on_sigpipe);
 
+    //Load dictionary (uppercase, only A–Z lines)
     FILE *df = fopen(argv[1], "r");
-    if (!df) { perror("open dict"); return 1; }
+    if (!df){ perror("open dict"); return 1; }
 
-    size_t cap = 1 << 15, n = 0;
-    char **dict = malloc(cap * sizeof *dict);
-    if (!dict) { perror("malloc dict"); return 1; }
+    size_t cap = 2048, n = 0;
+    char **dict = (char **)malloc(cap * sizeof *dict);
+    if (!dict){ perror("malloc dict"); fclose(df); return 1; }
 
-    char *line = NULL; size_t lcap = 0;
     long accepted = 0, rejected = 0;
+    char buf[4096];
 
-    while (getline(&line, &lcap, df) != -1) {
-        size_t L = strcspn(line, "\r\n");
-        line[L] = '\0';
-        upcase_inplace(line);
+    while (fgets(buf, sizeof buf, df)){
+        strip_newline(buf);
+        upcase_inplace(buf);
+        if (!is_all_AZ(buf)){ rejected++; continue; }
 
-        if (!is_all_letters(line)) { rejected++; continue; }
-
-        if (n == cap) {
+        if (n == cap){
             cap <<= 1;
-            char **tmp = realloc(dict, cap * sizeof *tmp);
-            if (!tmp) { perror("realloc dict"); return 1; }
+            char **tmp = (char **)realloc(dict, cap * sizeof *tmp);
+            if (!tmp){ perror("realloc dict"); fclose(df); return 1; }
             dict = tmp;
         }
-        dict[n++] = strdup(line);
-        accepted++;
+        dict[n] = dupstr(buf);
+        if (!dict[n]){ perror("strdup"); fclose(df); return 1; }
+        n++; accepted++;
     }
-    free(line); line = NULL;
     fclose(df);
 
     fprintf(stderr, "Accepted %ld words, rejected %ld\n", accepted, rejected);
 
-    // Filter stdin against the dictionary (linear search on purpose)
+    //Filter stdin; echo matches; survive SIGPIPE and still report
     long matched = 0;
-    lcap = 0;
-    while (!got_sigpipe && getline(&line, &lcap, stdin) != -1) {
-        size_t L = strcspn(line, "\r\n");
-        line[L] = '\0';
-        upcase_inplace(line);
-        if (!is_all_letters(line)) continue;
+    char in[256];
+
+    while (!got_sigpipe && fgets(in, sizeof in, stdin)){
+        strip_newline(in);
+        upcase_inplace(in);
+        if (!is_all_AZ(in)) continue;
 
         int hit = 0;
-        for (size_t i = 0; i < n; i++) {
-            if (strcmp(line, dict[i]) == 0) { hit = 1; break; }
+        for (size_t i = 0; i < n; ++i){
+            if (strcmp(in, dict[i]) == 0){ hit = 1; break; }
         }
-
-        if (hit) {
-            // Printing to a closed pipe triggers SIGPIPE; our handler sets got_sigpipe.
-            if (printf("%s\n", line) < 0 || got_sigpipe) break;
+        if (hit){
+            if (puts(in) == EOF || got_sigpipe) break;
             matched++;
         }
     }
 
     fprintf(stderr, "Matched %ld words\n", matched);
 
-    // Cleanup
-    free(line);
-    for (size_t i = 0; i < n; i++) free(dict[i]);
+    for (size_t i = 0; i < n; ++i) free(dict[i]);
     free(dict);
     return 0;
 }
