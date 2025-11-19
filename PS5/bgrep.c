@@ -13,70 +13,70 @@
 #include <signal.h>
 #include <setjmp.h>
 
-static unsigned char *g_pattern = NULL;
-static size_t g_pattern_len = 0;
-static int g_context_bytes = 0;
-static int g_had_error = 0, g_had_match = 0;
+static unsigned char *g_pattern = NULL; //holds pattern bytes
+static size_t g_pattern_len = 0; 
+static int g_context_bytes = 0; //-c (bytes before/after)
+static int g_had_error = 0, g_had_match = 0; 
 
-static jmp_buf g_sigbus_env;
-static const char *g_current_filename = NULL;
-static void *g_current_map = NULL;
+static jmp_buf g_sigbus_env; //checkpoint for scanning via jmp
+static const char *g_current_filename = NULL;  //name for SIGBUS message
+static void *g_current_map = NULL; 
 static size_t g_current_map_len = 0;
 static int g_current_fd = -1;
 
 void sigbus_handler(int signo) {
-    (void)signo;
+    (void)signo; //avoids signo warning
     if (g_current_filename)
         fprintf(stderr, "SIGBUS received while processing file %s\n", g_current_filename);
     else
         fprintf(stderr, "SIGBUS received\n");
-    longjmp(g_sigbus_env, 1);
+    longjmp(g_sigbus_env, 1); //jump back to corresponding setjmp in main and error clean
 }
 
 int main(int argc, char *argv[]) {
-    int i = 1, have_pattern_file = 0; 
-    const char *pattern_file = NULL;
+    int i = 1, have_pattern_file = 0;  //flag 1 if -p given
+    const char *pattern_file = NULL; 
 
-    if (argc == 1) {
+    if (argc == 1) { //if no arguments
         fprintf(stderr,
             "Usage: bgrep [-c context_bytes] -p pattern_file [file...]\n"
             "   or: bgrep [-c context_bytes] pattern [file...]\n");
         return -1;
     }
 
-    if (signal(SIGBUS, sigbus_handler) == SIG_ERR) {
+    if (signal(SIGBUS, sigbus_handler) == SIG_ERR) { //use sigbus_handler
         perror("signal");
         return -1;
     }
 
-    /* parse options -p and -c */
+    // parse options -p and -c
     g_context_bytes = 0;
     while (i < argc && argv[i][0] == '-' && argv[i][1] != '\0') {
-        if (strcmp(argv[i], "-p") == 0) {
+        if (strcmp(argv[i], "-p") == 0) { //pattern file
             i++;
             if (i >= argc) {
                 fprintf(stderr, "-p requires a pattern file\n");
-                return -1;
+                return -1; 
             }
             pattern_file = argv[i];
             have_pattern_file = 1;
             i++;
-        } else if (strcmp(argv[i], "-c") == 0) {
+        } else if (strcmp(argv[i], "-c") == 0) { //context byte count
             i++;
             if (i >= argc) {
                 fprintf(stderr, "-c requires a context byte count\n");
-                return -1;
+                return -1; 
             }
             g_context_bytes = atoi(argv[i]);
-            if (g_context_bytes < 0) g_context_bytes = 0;
+            if (g_context_bytes < 0) g_context_bytes = 0; //negative values clamped to 0
             i++;
-        } else break;
+        } else break; //stop option parsing
     }
 
-    /* load pattern */
+    // load pattern
     if (have_pattern_file) {
-        int pfd; struct stat pst; ssize_t rd;
-        pfd = open(pattern_file, O_RDONLY);
+        int pfd; struct stat pst; ssize_t rd; 
+        pfd = open(pattern_file, O_RDONLY); 
         if (pfd < 0) {
             fprintf(stderr, "Can't open %s for reading:%s\n", pattern_file, strerror(errno));
             return -1;
