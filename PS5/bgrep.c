@@ -84,7 +84,6 @@ int main(int argc, char *argv[]) {
         int pfd;
         struct stat pst;
         ssize_t rd;
-
         pfd = open(pattern_file, O_RDONLY);
         if (pfd < 0) {
             fprintf(stderr, "Can not open %s for reading: %s\n",
@@ -147,7 +146,6 @@ int main(int argc, char *argv[]) {
             g_pattern_len = 0;
             return -1;
         }
-
         i++;
     }
 
