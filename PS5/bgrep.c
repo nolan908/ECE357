@@ -15,10 +15,10 @@
 
 static unsigned char *g_pattern = NULL; //holds pattern bytes
 static size_t g_pattern_len = 0; 
-static int g_context_bytes = 0; //-c (bytes before/after)
+static int g_context_bytes = 0;
 static int g_had_error = 0, g_had_match = 0; 
 
-static jmp_buf g_sigbus_env; //checkpoint for scanning via jmp
+static jmp_buf g_sigbus_env;
 static const char *g_current_filename = NULL;  //name for SIGBUS message
 static void *g_current_map = NULL; 
 static size_t g_current_map_len = 0;
@@ -30,7 +30,7 @@ void sigbus_handler(int signo) {
         fprintf(stderr, "SIGBUS received while processing file %s\n", g_current_filename);
     else
         fprintf(stderr, "SIGBUS received\n");
-    longjmp(g_sigbus_env, 1); //jump back to corresponding setjmp in main and error clean
+    longjmp(g_sigbus_env, 1);
 }
 
 int main(int argc, char *argv[]) {
@@ -78,11 +78,11 @@ int main(int argc, char *argv[]) {
         int pfd; struct stat pst; ssize_t rd; 
         pfd = open(pattern_file, O_RDONLY); 
         if (pfd < 0) {
-            fprintf(stderr, "Can't open %s for reading:%s\n", pattern_file, strerror(errno));
+            fprintf(stderr, "Can't open %s for reading: %s\n", pattern_file, strerror(errno));
             return -1;
         }
         if (fstat(pfd, &pst) < 0) {
-            fprintf(stderr, "fstat failed on %s:%s\n", pattern_file, strerror(errno));
+            fprintf(stderr, "fstat failed on %s: %s\n", pattern_file, strerror(errno));
             close(pfd);
             return -1;
         }
@@ -94,13 +94,13 @@ int main(int argc, char *argv[]) {
         g_pattern_len = (size_t)pst.st_size; //save pattern length 
         g_pattern = (unsigned char *)malloc(g_pattern_len);
         if (!g_pattern) {
-            fprintf(stderr, "malloc failed for pattern:%s\n", strerror(errno));
+            fprintf(stderr, "malloc failed for pattern: %s\n", strerror(errno));
             close(pfd);
             return -1;
         }
         rd = read(pfd, g_pattern, g_pattern_len);
         if (rd < 0 || (size_t)rd != g_pattern_len) { //fail and short read
-            fprintf(stderr, "Error reading pattern file %s:%s\n", pattern_file, strerror(errno));
+            fprintf(stderr, "Error reading pattern file %s: %s\n", pattern_file, strerror(errno));
             close(pfd);
             free(g_pattern);
             g_pattern = NULL; g_pattern_len = 0;
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
         }
         g_pattern = (unsigned char *)strdup(pstr); //allocates memory and copies string to it
         if (!g_pattern) {
-            fprintf(stderr, "strdup failed for pattern:%s\n", strerror(errno));
+            fprintf(stderr, "strdup failed for pattern: %s\n", strerror(errno));
             g_pattern_len = 0;
             return -1;
         }
@@ -130,9 +130,9 @@ int main(int argc, char *argv[]) {
 
     // unified loop over inputs: stdin if no files, then the sole input file is standard input
 
-    int use_stdin = (i >= argc); //use_stdin = 0, then have it as standard input
-    int start = use_stdin ? 0 : i; //0 if stdin is standard input (dummy index), i is index of file
-    int end   = use_stdin ? 0 : argc - 1; //process through file names
+    int use_stdin = (i >= argc);
+    int start = use_stdin ? 0 : i;
+    int end   = use_stdin ? 0 : argc - 1;
     
     for (int idx = start; idx <= end; idx++) {
         const char *fname;
@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
             fname = argv[idx];
             fd = open(fname, O_RDONLY);
             if (fd < 0) {
-                fprintf(stderr, "Can't open %s for reading:%s\n", fname, strerror(errno));
+                fprintf(stderr, "Can't open %s for reading: %s\n", fname, strerror(errno));
                 g_had_error = 1;
                 continue;
             }
@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (fstat(fd, &st) < 0) {
-            fprintf(stderr, "fstat failed on %s:%s\n", fname, strerror(errno));
+            fprintf(stderr, "fstat failed on %s: %s\n", fname, strerror(errno));
             g_had_error = 1;
             if (!use_stdin) close(fd);
             g_current_fd = -1; g_current_filename = NULL;
@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
 
         g_current_map = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
         if (g_current_map == MAP_FAILED) {
-            fprintf(stderr, "mmap failed on %s:%s\n", fname, strerror(errno));
+            fprintf(stderr, "mmap failed on %s: %s\n", fname, strerror(errno));
             g_had_error = 1;
             g_current_map = NULL; g_current_map_len = 0;
             if (!use_stdin) close(fd);
@@ -212,14 +212,14 @@ int main(int argc, char *argv[]) {
                 if (memcmp(base + pos, g_pattern, g_pattern_len) == 0) {
                     g_had_match = 1;
                     if (g_context_bytes <= 0) {
-                        printf("%s:%zu\n", fname, pos);
+                        printf("%s: %zu\n", fname, pos);
                     } else {
                         size_t ctxt = (size_t)g_context_bytes;
                         size_t ctx_start = (pos > ctxt) ? pos - ctxt : 0;
                         size_t ctx_end = pos + g_pattern_len + ctxt;
                         if (ctx_end > n) ctx_end = n;
                         size_t ctx_len = ctx_end - ctx_start;
-                        printf("%s:%zu ", fname, pos);
+                        printf("%s: %zu ", fname, pos);
                         for (size_t j = 0; j < ctx_len; j++) {
                             unsigned char b = base[ctx_start + j];
                             char ch = isprint(b) ? (char)b : '?';
