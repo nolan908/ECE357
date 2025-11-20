@@ -78,11 +78,11 @@ int main(int argc, char *argv[]) {
         int pfd; struct stat pst; ssize_t rd; 
         pfd = open(pattern_file, O_RDONLY); 
         if (pfd < 0) {
-            fprintf(stderr, "Can't open %s for reading: %s\n", pattern_file, strerror(errno));
+            fprintf(stderr, "Can not open %s for reading: %s\n", pattern_file, strerror(errno));
             return -1;
         }
         if (fstat(pfd, &pst) < 0) {
-            fprintf(stderr, "fstat failed on %s: %s\n", pattern_file, strerror(errno));
+            fprintf(stderr, "fstat() failed on %s: %s\n", pattern_file, strerror(errno));
             close(pfd);
             return -1;
         }
@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
         g_pattern_len = (size_t)pst.st_size; //save pattern length 
         g_pattern = (unsigned char *)malloc(g_pattern_len);
         if (!g_pattern) {
-            fprintf(stderr, "malloc failed for pattern: %s\n", strerror(errno));
+            fprintf(stderr, "malloc() failed for pattern: %s\n", strerror(errno));
             close(pfd);
             return -1;
         }
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
     } else {
         const char *pstr;
         if (i >= argc) {
-            fprintf(stderr, "No pattern specified\n");
+            fprintf(stderr, "There is no pattern specified\n");
             return -1;
         }
         pstr = argv[i]; //points to pattern string on command line
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
         }
         g_pattern = (unsigned char *)strdup(pstr); //allocates memory and copies string to it
         if (!g_pattern) {
-            fprintf(stderr, "strdup failed for pattern: %s\n", strerror(errno));
+            fprintf(stderr, "strdup() failed for pattern: %s\n", strerror(errno));
             g_pattern_len = 0;
             return -1;
         }
@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
             fname = argv[idx];
             fd = open(fname, O_RDONLY);
             if (fd < 0) {
-                fprintf(stderr, "Can't open %s for reading: %s\n", fname, strerror(errno));
+                fprintf(stderr, "Can not open %s for reading: %s\n", fname, strerror(errno));
                 g_had_error = 1;
                 continue;
             }
@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (!S_ISREG(st.st_mode)) {
-            fprintf(stderr, "Can't mmap %s: not a regular file\n", fname);
+            fprintf(stderr, "Can not mmap %s: not a regular file\n", fname);
             g_had_error = 1;
             if (!use_stdin) close(fd);
             g_current_fd = -1; g_current_filename = NULL;
