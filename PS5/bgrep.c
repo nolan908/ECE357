@@ -30,7 +30,7 @@ void sigbus_handler(int signo) {
         fprintf(stderr, "SIGBUS received while processing file %s\n", g_current_filename);
     else
         fprintf(stderr, "SIGBUS received\n");
-    longjmp(g_sigbus_env, 1);
+    longjmp(g_sigbus_env, 1); //bail out of file
 }
 
 int main(int argc, char *argv[]) {
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    if (signal(SIGBUS, sigbus_handler) == SIG_ERR) { //use sigbus_handler
+    if (signal(SIGBUS, sigbus_handler) == SIG_ERR) { //if the file shrinks, call sigbus handler
         perror("signal");
         return -1;
     }
