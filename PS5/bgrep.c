@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
         }
         g_current_map_len = (size_t)st.st_size;
 
-        /* search for pattern */
+        // search for pattern 
         {
             unsigned char *base = (unsigned char *)g_current_map;
             size_t n = (size_t)st.st_size;
@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        munmap(g_current_map, st.st_size);
+        munmap(g_current_map, st.st_size); //destroy memory region
         g_current_map = NULL; g_current_map_len = 0;
         if (!use_stdin) close(fd);
         g_current_fd = -1; g_current_filename = NULL;
