@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
             close(pfd);
             return -1;
         }
-        g_pattern_len = (size_t)pst.st_size;
+        g_pattern_len = (size_t)pst.st_size; //save pattern length 
         g_pattern = (unsigned char *)malloc(g_pattern_len);
         if (!g_pattern) {
             fprintf(stderr, "malloc failed for pattern:%s\n", strerror(errno));
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
             return -1;
         }
         rd = read(pfd, g_pattern, g_pattern_len);
-        if (rd < 0 || (size_t)rd != g_pattern_len) {
+        if (rd < 0 || (size_t)rd != g_pattern_len) { //fail and short read
             fprintf(stderr, "Error reading pattern file %s:%s\n", pattern_file, strerror(errno));
             close(pfd);
             free(g_pattern);
@@ -113,13 +113,13 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "No pattern specified\n");
             return -1;
         }
-        pstr = argv[i];
+        pstr = argv[i]; //points to pattern string on command line
         g_pattern_len = strlen(pstr);
         if (g_pattern_len == 0) {
             fprintf(stderr, "Empty pattern\n");
             return -1;
         }
-        g_pattern = (unsigned char *)strdup(pstr);
+        g_pattern = (unsigned char *)strdup(pstr); //allocates memory and copies string to it
         if (!g_pattern) {
             fprintf(stderr, "strdup failed for pattern:%s\n", strerror(errno));
             g_pattern_len = 0;
@@ -128,18 +128,19 @@ int main(int argc, char *argv[]) {
         i++;
     }
 
-    /* unified loop over inputs: stdin if no files, else each file */
-    int use_stdin = (i >= argc);
-    int start = use_stdin ? 0 : i;
-    int end   = use_stdin ? 0 : argc - 1;
+    // unified loop over inputs: stdin if no files, then the sole input file is standard input
 
+    int use_stdin = (i >= argc); //use_stdin = 0, then have it as standard input
+    int start = use_stdin ? 0 : i; //0 if stdin is standard input (dummy index), i is index of file
+    int end   = use_stdin ? 0 : argc - 1; //process through file names
+    
     for (int idx = start; idx <= end; idx++) {
         const char *fname;
         int fd;
         struct stat st;
 
         if (use_stdin) {
-            fname = "<standard input>";
+            fname = "<standard input>";  
             fd = STDIN_FILENO;
         } else {
             fname = argv[idx];
@@ -242,7 +243,7 @@ int main(int argc, char *argv[]) {
         if (!use_stdin) close(fd);
         g_current_fd = -1; g_current_filename = NULL;
 
-        if (use_stdin) break; /* only one stdin "file" */
+        if (use_stdin) break; //only one stdin "file"
     }
 
     if (g_pattern) free(g_pattern);
