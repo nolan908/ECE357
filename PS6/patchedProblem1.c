@@ -13,10 +13,11 @@ void signal_handler(int sig)
 }
 int some_function(int a)
 {
+  /* Manipulate data structure */
   if (recieve_sigint) {
     spin_lock(&ms->lock);
     recieve_sigint = 0;
-    //manipulate ms, shared data in response to SIGINT
+    /* Manipulate data structure in response to SIGINT */
     spin_unlock(&ms->lock);
   }
 return something;
