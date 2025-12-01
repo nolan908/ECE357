@@ -1,0 +1,23 @@
+#include <signal.h>
+
+volatile sig_atomic_t recieve_sigint = 0; //global flag
+
+struct shared_data_struct {
+  int lock;
+  /* Other data structures stuff */
+} *ms;
+/* signal_handler is the disposition of SIGINT */
+void signal_handler(int sig)
+{
+  recieve_sigint = 1; //record SIGINT happened
+}
+int some_function(int a)
+{
+  if (recieve_sigint) {
+    spin_lock(&ms->lock);
+    recieve_sigint = 0;
+    //manipulate ms, shared data in response to SIGINT
+    spin_unlock(&ms->lock);
+  }
+return something;
+}
