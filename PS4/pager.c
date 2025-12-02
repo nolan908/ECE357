@@ -33,7 +33,7 @@ if (!tty) {
         count++; 
 
         if (count == LINES_PER_PAGE) { //page full
-            fputs("---Press RETURN for more---", stdout); 
+            fputs("---Press RETURN for more---\n", stdout); 
             fflush(stdout); 
 
             if (!fgets(reply, sizeof(reply), tty)) {
