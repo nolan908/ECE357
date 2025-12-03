@@ -1,7 +1,4 @@
-#include <signal.h>
-
-volatile sig_atomic_t recieve_sigint = 0; //global flag
-
+int recieve_sigint = 0
 struct shared_data_struct {
   int lock;
   /* Other data structures stuff */
